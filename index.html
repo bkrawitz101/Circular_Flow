@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -243,15 +243,34 @@
             scene = new THREE.Scene();
             // Load background image
             const textureLoader = new THREE.TextureLoader();
+            const imagePath = './images/regeneration_background.png'; // Path to the user's image
+
+            console.log(`Attempting to load background image from: ${imagePath}`); // Log the path being attempted
+
             textureLoader.load(
-                'https://placehold.co/1920x1080/000000/FFFFFF/png?text=Regenerative+Background', // Placeholder for a regenerative image
+                imagePath,
                 function(texture) {
                     scene.background = texture;
+                    console.log(`Successfully loaded background image from: ${imagePath}`);
                 },
-                undefined,
+                undefined, // onProgress callback
                 function(err) {
-                    console.error('An error occurred loading the background texture:', err);
-                    scene.background = new THREE.Color(0x0d1117); // Fallback to dark color
+                    // Log the full error object for better debugging
+                    console.error(`An error occurred loading the background texture from "${imagePath}":`, err);
+                    // Fallback to a reliable placeholder if the user's image fails to load
+                    textureLoader.load(
+                        'https://placehold.co/1920x1080/0d1117/e2e8f0?text=Regenerative+Background+Fallback',
+                        function(fallbackTexture) {
+                            scene.background = fallbackTexture;
+                            console.log('Successfully loaded fallback background image.');
+                        },
+                        undefined,
+                        function(fallbackErr) {
+                            console.error('An error occurred loading the fallback background texture:', fallbackErr);
+                            scene.background = new THREE.Color(0x0d1117); // Final fallback to solid dark color
+                            console.log('Falling back to solid background color.');
+                        }
+                    );
                 }
             );
 
