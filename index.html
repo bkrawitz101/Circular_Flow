@@ -103,9 +103,9 @@
         /* Mobile-specific styles for info panel */
         @media (max-width: 768px) {
             #info-panel {
-                /* Remove full screen properties, let it size based on content and max-width/height */
-                top: 1rem;   /* Keep top/left offset for mobile as well */
-                left: 1rem;
+                top: 50%; /* Center vertically */
+                left: 50%; /* Center horizontally */
+                transform: translate(-50%, -50%); /* Adjust for panel's own size */
                 width: auto; /* Let content determine width */
                 height: auto; /* Let content determine height */
                 border-radius: 0.75rem; /* Revert to rounded corners */
