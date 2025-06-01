@@ -99,6 +99,20 @@
             width: 100%;
             height: 100%;
         }
+
+        /* Mobile-specific styles for info panel */
+        @media (max-width: 768px) {
+            #info-panel {
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                max-width: 100vw; /* Override desktop max-width */
+                max-height: 100vh; /* Override desktop max-height */
+                border-radius: 0; /* Remove rounded corners for full screen */
+                padding: 1rem; /* Ensure consistent padding */
+            }
+        }
     </style>
 </head>
 <body>
@@ -378,6 +392,9 @@
 
         // Internal function for click/touch logic, called by both onClick and onTouchEnd
         function onClickInternal() {
+            // Only allow clicks if controls are enabled (i.e., not in the middle of a camera animation)
+            if (!controls.enabled) return;
+
             // Update the picking ray with the camera and mouse/touch position
             raycaster.setFromCamera(mouse, camera);
 
@@ -497,7 +514,7 @@
                 nodeData.outputs.forEach(output => {
                     const li = document.createElement('li');
                     li.innerText = output;
-                    outputsList.appendChild(li); // Corrected: outputsList instead of inputsList
+                    outputsList.appendChild(li);
                 });
                 infoDetails.appendChild(outputsList);
             }
@@ -527,11 +544,13 @@
             }
 
             infoPanel.style.display = 'block'; // Show the info panel
+            controls.enabled = false; // Disable controls when panel is open
         }
 
         // Function to hide the info panel
         function hideInfoPanel() {
             document.getElementById('info-panel').style.display = 'none';
+            controls.enabled = true; // Re-enable controls when panel is closed
         }
 
         // Animation loop
@@ -541,37 +560,39 @@
             // Update controls
             controls.update();
 
-            // Raycasting for hover effect
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(scene.children);
+            // Raycasting for hover effect (only if controls are enabled)
+            if (controls.enabled) {
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(scene.children);
 
-            if (intersects.length > 0) {
-                const hoveredNode = intersects.find(obj => obj.object.userData && obj.object.userData.id);
+                if (intersects.length > 0) {
+                    const hoveredNode = intersects.find(obj => obj.object.userData && obj.object.userData.id);
 
-                if (hoveredNode) {
-                    if (INTERSECTED != hoveredNode.object) {
-                        // Restore previous intersected object's color
+                    if (hoveredNode) {
+                        if (INTERSECTED != hoveredNode.object) {
+                            // Restore previous intersected object's color
+                            if (INTERSECTED) {
+                                INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
+                            }
+                            // Store current intersected object and change its color
+                            INTERSECTED = hoveredNode.object;
+                            INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
+                            INTERSECTED.material.emissive.setHex(0x222222); // Subtle glow on hover
+                        }
+                    } else {
+                        // No intersection or new object, restore previous
                         if (INTERSECTED) {
                             INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
                         }
-                        // Store current intersected object and change its color
-                        INTERSECTED = hoveredNode.object;
-                        INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
-                        INTERSECTED.material.emissive.setHex(0x222222); // Subtle glow on hover
+                        INTERSECTED = null;
                     }
                 } else {
-                    // No intersection or new object, restore previous
+                    // No intersection, restore previous
                     if (INTERSECTED) {
                         INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
                     }
                     INTERSECTED = null;
                 }
-            } else {
-                // No intersection, restore previous
-                if (INTERSECTED) {
-                    INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
-                }
-                INTERSECTED = null;
             }
 
             renderer.render(scene, camera);
