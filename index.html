@@ -114,7 +114,8 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script> <script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <script>
         // Global variables for Three.js scene
         let scene, camera, renderer, controls;
         let raycaster, mouse;
@@ -201,11 +202,11 @@
               type: 'community' },
 
             // External nodes for clarity (no direct connections from them in this flow)
-            { id: 'culinary-retreat-programs', title: 'Culinary & Retreat Programs', description: 'On-site culinary experiences and retreat offerings that utilize fresh produce from the gardens.', inputs: [], outputs: [], connections: [], feedsInto: [], type: 'external' }, // Added connections
-            { id: 'retail-sales', title: 'Retail Sales', description: 'Channels for selling Spirit Well Ranch products, including local markets and online stores.', inputs: [], outputs: [], connections: [], feedsInto: [], type: 'external' }, // Added connections
-            { id: 'ranch-operations', title: 'Ranch Operations', description: 'The daily functioning and energy consumption of the ranch, powered by sustainable energy sources like biodiesel.', inputs: [], outputs: [], connections: [], feedsInto: [], type: 'external' }, // Added connections
-            { id: 'education-loop', title: 'Education Loop', description: 'Ongoing learning and knowledge sharing within the system, fostering a deeper understanding of regenerative practices.', inputs: [], outputs: [], connections: [], feedsInto: [], type: 'external' }, // Added connections
-            { id: 'fundraising', title: 'Fundraising & Grants', description: 'Support mechanisms for the ranch\'s initiatives, enabling expansion and continued regenerative efforts.', inputs: [], outputs: [], connections: [], feedsInto: [], type: 'external' }, // Added connections
+            { id: 'culinary-retreat-programs', title: 'Culinary & Retreat Programs', description: 'On-site culinary experiences and retreat offerings that utilize fresh produce from the gardens.', inputs: [], outputs: [], connections: [], feedsInto: [], type: 'external' },
+            { id: 'retail-sales', title: 'Retail Sales', description: 'Channels for selling Spirit Well Ranch products, including local markets and online stores.', inputs: [], outputs: [], connections: [], feedsInto: [], type: 'external' },
+            { id: 'ranch-operations', title: 'Ranch Operations', description: 'The daily functioning and energy consumption of the ranch, powered by sustainable energy sources like biodiesel.', inputs: [], outputs: [], connections: [], feedsInto: [], type: 'external' },
+            { id: 'education-loop', title: 'Education Loop', description: 'Ongoing learning and knowledge sharing within the system, fostering a deeper understanding of regenerative practices.', inputs: [], outputs: [], connections: [], feedsInto: [], type: 'external' },
+            { id: 'fundraising', title: 'Fundraising & Grants', description: 'Support mechanisms for the ranch\'s initiatives, enabling expansion and continued regenerative efforts.', inputs: [], outputs: [], connections: [], feedsInto: [], type: 'external' },
         ];
 
         // Mapping node types to colors (hexadecimal for Three.js)
@@ -260,10 +261,11 @@
             // Create nodes and connections
             createNodesAndConnections();
 
-            // Event listeners for window resize and mouse interaction
+            // Event listeners for window resize, mouse interaction, and TOUCH interaction
             window.addEventListener('resize', onWindowResize, false);
             window.addEventListener('mousemove', onMouseMove, false);
             window.addEventListener('click', onClick, false);
+            window.addEventListener('touchend', onTouchEnd, false); // Add touch event listener for mobile devices
         }
 
         // Function to create a text sprite
@@ -339,7 +341,7 @@
                 const sourceNode = nodesMap.get(sourceNodeData.id);
                 if (!sourceNode) return;
 
-                // Ensure connections array exists before iterating
+                // Ensure connections array exists and is an array before iterating
                 if (sourceNodeData.connections && Array.isArray(sourceNodeData.connections)) {
                     sourceNodeData.connections.forEach(targetId => {
                         const targetNode = nodesMap.get(targetId);
@@ -372,6 +374,49 @@
             // Calculate mouse position in normalized device coordinates (-1 to +1)
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        }
+
+        // Internal function for click/touch logic, called by both onClick and onTouchEnd
+        function onClickInternal() {
+            // Update the picking ray with the camera and mouse/touch position
+            raycaster.setFromCamera(mouse, camera);
+
+            // Calculate objects intersecting the picking ray
+            const intersects = raycaster.intersectObjects(scene.children);
+
+            if (intersects.length > 0) {
+                // Find the first intersected object that is a node (has userData.id)
+                const clickedNode = intersects.find(obj => obj.object.userData && obj.object.userData.id);
+
+                if (clickedNode) {
+                    zoomToNode(clickedNode.object.userData.id);
+                }
+            }
+        }
+
+        // Handle mouse click for desktop
+        function onClick(event) {
+             // Calculate mouse position in normalized device coordinates (-1 to +1)
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            onClickInternal(); // Call the shared internal logic
+        }
+
+        // Function to handle touch end event for 'clicking' on mobile
+        function onTouchEnd(event) {
+            // Prevent scrolling or other default touch behaviors
+            event.preventDefault();
+
+            // Only consider the first touch for a 'click'
+            if (event.changedTouches.length > 0) {
+                const touch = event.changedTouches[0];
+
+                // Calculate touch position in normalized device coordinates (-1 to +1)
+                mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+
+                onClickInternal(); // Call the shared internal logic
+            }
         }
 
         // Function to animate camera to a target position and look at a target point
@@ -452,7 +497,7 @@
                 nodeData.outputs.forEach(output => {
                     const li = document.createElement('li');
                     li.innerText = output;
-                    outputsList.appendChild(li);
+                    inputsList.appendChild(li); // Typo fixed: should be outputsList
                 });
                 infoDetails.appendChild(outputsList);
             }
@@ -487,24 +532,6 @@
         // Function to hide the info panel
         function hideInfoPanel() {
             document.getElementById('info-panel').style.display = 'none';
-        }
-
-        // Handle mouse click for displaying info
-        function onClick(event) {
-            // Update the picking ray with the camera and mouse position
-            raycaster.setFromCamera(mouse, camera);
-
-            // Calculate objects intersecting the picking ray
-            const intersects = raycaster.intersectObjects(scene.children);
-
-            if (intersects.length > 0) {
-                // Find the first intersected object that is a node (has userData.id)
-                const clickedNode = intersects.find(obj => obj.object.userData && obj.object.userData.id);
-
-                if (clickedNode) {
-                    zoomToNode(clickedNode.object.userData.id);
-                }
-            }
         }
 
         // Animation loop
@@ -555,10 +582,6 @@
             init();
             animate();
         };
-    </script>
-</body>
-</html>
-
     </script>
 </body>
 </html>
