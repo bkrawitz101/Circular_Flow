@@ -103,14 +103,14 @@
         /* Mobile-specific styles for info panel */
         @media (max-width: 768px) {
             #info-panel {
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                max-width: 100vw; /* Override desktop max-width */
-                max-height: 100vh; /* Override desktop max-height */
-                border-radius: 0; /* Remove rounded corners for full screen */
-                padding: 1rem; /* Ensure consistent padding */
+                /* Remove full screen properties, let it size based on content and max-width/height */
+                top: 1rem;   /* Keep top/left offset for mobile as well */
+                left: 1rem;
+                width: auto; /* Let content determine width */
+                height: auto; /* Let content determine height */
+                border-radius: 0.75rem; /* Revert to rounded corners */
+                max-width: calc(100vw - 2rem); /* Constrain width to screen minus margins */
+                max-height: calc(100vh - 2rem); /* Constrain height to screen minus margins */
             }
         }
     </style>
