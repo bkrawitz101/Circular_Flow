@@ -175,116 +175,127 @@
         const particleSystems = []; // To store particle systems for animation (for all nodes)
         let earthAtmosphereParticles; // Specific for Earth atmosphere particles
         let centralEarthSphere; // Reference to the central Earth sphere
+        const laserBeams = []; // Store laser beam particle systems
 
         // Data structure representing the nodes and their connections
         const flowData = [
             { id: 'waste-upcycle-hub', title: 'Waste Upcycle Hub', description: 'The central sorting and routing center for all incoming waste streams, acting as the primary intake and distribution point for all materials entering the closed-loop system.',
               inputs: ['Residential & Business Recyclables (plastic, glass, metal, paper, cardboard)', 'Food Waste (BriarPatch Co-op, on-site culinary, restaurant partners)', 'Butcher Trim (fat-heavy, frozen)', 'Used Cooking Oil from local restaurants', 'Agricultural Waste (stalks, leaves, biomass)'],
               outputs: ['Streamlined inputs for downstream systems', 'Categorized byproduct data for tracking'],
-              connections: ['tallow-system', 'soil-program', 'soldier-fly-farm', 'biodiesel-production', 'mushroom-cultivation', 'artist-studio'], // Added connections
+              connections: ['tallow-system', 'soil-program', 'soldier-fly-farm', 'biodiesel-production', 'mushroom-cultivation', 'artist-studio'],
               feedsInto: [{id: 'tallow-system', label: 'Tallow System'}, {id: 'soil-program', label: 'Soil Program'}, {id: 'soldier-fly-farm', label: 'Soldier Fly Farm'}, {id: 'biodiesel-production', label: 'Biodiesel Plant'}, {id: 'mushroom-cultivation', label: 'Mushroom Farm'}, {id: 'artist-studio', label: 'Art/Design Studio'}],
               type: 'core',
-              geometryType: 'box', // Custom geometry
-              materialOptions: { color: 0x6B7280 } // Dark grey
+              particleColor1: 0x6B7280, particleColor2: 0x9CA3AF, particleCount: 1000 // Dark grey to light grey gradient
             },
 
             { id: 'farm-animal-program', title: 'Farm Animal Rescue & Meat', description: 'Provides ethical care for rescued farm animals (pigs, goats, poultry), integrating them into the regenerative system for feed conversion and byproduct generation.',
               inputs: ['Rescued farm animals', 'Food waste (BriarPatch, on-site) for animal feed', 'Donations and sponsorships'],
               outputs: ['Ethically sourced meat (resale)', 'Animal fats (for tallow)', 'Bones/offal', 'Manure'],
-              connections: ['tallow-system', 'soil-program', 'biodiesel-production'], // Added connections
+              connections: ['tallow-system', 'soil-program', 'biodiesel-production'],
               feedsInto: [{id: 'tallow-system', label: 'Tallow System'}, {id: 'soil-program', label: 'Soil Program'}, {id: 'biodiesel-production', label: 'Biodiesel (if excess fat)'}],
               type: 'biological',
-              geometryType: 'cone', // Custom geometry (pyramid-like)
-              materialOptions: { color: 0x8B4513 } // Saddle Brown
+              particleColor1: 0x8B4513, particleColor2: 0xD2B48C, particleCount: 1000 // Saddle Brown to Tan gradient
             },
 
             { id: 'soldier-fly-farm', title: 'Black Soldier Fly Farm', description: 'Converts organic waste into high-protein animal feed and organic fertilizer (frass) using black soldier fly larvae.',
               inputs: ['Food waste', 'Organic kitchen scraps', 'Cardboard mulch (bedding)', 'Byproduct tallow scraps (minimal)'],
               outputs: ['Protein-rich feed for animals', 'Frass (organic fertilizer)'],
-              connections: ['farm-animal-program', 'soil-program'], // Added connections
+              connections: ['farm-animal-program', 'soil-program'],
               feedsInto: [{id: 'farm-animal-program', label: 'Animal Feed Program'}, {id: 'soil-program', label: 'Soil Program'}],
-              type: 'biological' }, // Default sphere, type color
+              type: 'biological',
+              particleColor1: 0x556B2F, particleColor2: 0x9ACD32, particleCount: 1000 // Dark Olive Green to Yellow Green
+            },
 
             { id: 'soil-program', title: 'Soil Program', description: 'The foundation of growth, creating nutrient-rich soil amendments through composting, vermiculture, and biochar activation.',
               inputs: ['Manure (animal rescue)', 'Food scraps (kitchen, BriarPatch)', 'Cardboard (from recyclables)', 'Spent mushroom substrate', 'Garden/agricultural trimmings', 'Black Soldier Fly frass', 'Biochar from pyrolysis'],
               outputs: ['Premium compost & worm castings', 'Biochar-rich soil blends', 'Mulch'],
-              connections: ['herb-veg-gardens', 'mushroom-cultivation', 'soil-program'], // Added connections
-              feedsInto: [{id: 'herb-veg-gardens', label: 'Herb & Vegetable Gardens'}, {id: 'mushroom-cultivation', label: 'Mushroom Substrate'}, {id: 'soil-program', label: 'Permaculture landscaping'}], // Self-referencing for landscaping
+              connections: ['herb-veg-gardens', 'mushroom-cultivation', 'soil-program'],
+              feedsInto: [{id: 'herb-veg-gardens', label: 'Herb & Vegetable Gardens'}, {id: 'mushroom-cultivation', label: 'Mushroom Substrate'}, {id: 'soil-program', label: 'Permaculture landscaping'}],
               type: 'biological',
-              materialOptions: { color: 0x5D4037 } // Darker Earth Brown
+              particleColor1: 0x4A2C2A, particleColor2: 0x7B3F00, particleCount: 1000 // Dark Brown to Medium Brown
             },
 
             { id: 'herb-veg-gardens', title: 'Herb & Vegetable Gardens', description: 'Cultivates a variety of herbs for skincare and medicine, and vegetables for culinary use, following permaculture principles.',
               inputs: ['Compost and biochar soil (from Soil Program)', 'Rainwater & greywater (future system)', 'Seeds & cuttings'],
               outputs: ['Herbs for skincare & medicine', 'Vegetables for culinary use'],
-              connections: ['skincare-line', 'culinary-retreat-programs', 'soil-program'], // Added connections
+              connections: ['skincare-line', 'culinary-retreat-programs', 'soil-program'],
               feedsInto: [{id: 'skincare-line', label: 'Skincare Line'}, {id: 'culinary-retreat-programs', label: 'Culinary & Retreat Programs'}, {id: 'soil-program', label: 'Soil Program (trimmings)'}],
-              type: 'biological' }, // Default sphere, type color
+              type: 'biological',
+              particleColor1: 0x228B22, particleColor2: 0x90EE90, particleCount: 1000 // Forest Green to Light Green
+            },
 
             { id: 'mushroom-cultivation', title: 'Mushroom Cultivation', description: 'Grows gourmet mushrooms in climate-controlled environments, utilizing agricultural byproducts as substrate.',
               inputs: ['Shredded hemp stalks', 'Sawdust, cardboard, coffee grounds', 'Climate-controlled trailer (biomass heated)'],
               outputs: ['Gourmet mushrooms', 'Spent substrate for soil'],
-              connections: ['culinary-retreat-programs', 'soil-program'], // Added connections
+              connections: ['culinary-retreat-programs', 'soil-program'],
               feedsInto: [{id: 'culinary-retreat-programs', label: 'Culinary Program'}, {id: 'soil-program', label: 'Soil Program'}],
-              type: 'biological' }, // Default sphere, type color
+              type: 'biological',
+              particleColor1: 0x8B4513, particleColor2: 0xF5DEB3, particleCount: 1000 // Saddle Brown to Wheat (mushroom cap colors)
+            },
 
             { id: 'tallow-system', title: 'Tallow System', description: 'Renders animal fats into refined tallow for the skincare line and high-protein animal feed, ensuring no part of the animal goes to waste.',
               inputs: ['Butcher trim from BriarPatch (frozen fat & meat)', 'Fat from rescued animals'],
               outputs: ['Refined tallow', 'Boiled meat (high-protein animal feed)'],
-              connections: ['skincare-line', 'biodiesel-production', 'farm-animal-program'], // Added connections
+              connections: ['skincare-line', 'biodiesel-production', 'farm-animal-program'],
               feedsInto: [{id: 'skincare-line', label: 'Skincare Product Line'}, {id: 'biodiesel-production', label: 'Biodiesel System (optional secondary input)'}, {id: 'farm-animal-program', label: 'Animal Feed System'}],
-              type: 'product' }, // Default sphere, type color
+              type: 'product',
+              particleColor1: 0xFFF8DC, particleColor2: 0xFFDAB9, particleCount: 1000 // Cornsilk to Peach Puff (tallow colors)
+            },
 
             { id: 'skincare-line', title: 'Spirit Well Skincare', description: 'Produces a line of natural, small-batch skincare products, embodying the ranch\'s regenerative ethos.',
               inputs: ['Refined tallow (from Tallow System)', 'Herbs (from on-site gardens)', 'Beeswax (future beekeeping)', 'Recycled jars/glass (from Artist Studio)'],
               outputs: ['Skincare products for sale (local, online)', 'Brand presence tied to regenerative ethos'],
-              connections: ['retail-sales', 'campground-tourism'], // Added connections
+              connections: ['retail-sales', 'campground-tourism'],
               feedsInto: [{id: 'retail-sales', label: 'Retail Loop (with BriarPatch)'}, {id: 'campground-tourism', label: 'Workshops and educational demos'}],
-              type: 'product' }, // Default sphere, type color
+              type: 'product',
+              particleColor1: 0xFFC0CB, particleColor2: 0xF0F8FF, particleCount: 1000 // Pink to AliceBlue (soft skincare colors)
+            },
 
             { id: 'biodiesel-production', title: 'Biodiesel Production', description: 'Converts used cooking oils and excess animal fats into clean-burning biodiesel for ranch vehicles and generators.',
               inputs: ['Used cooking oil', 'Tallow (optional excess)', 'Methanol, Lye'],
               outputs: ['Biodiesel (for ranch vehicles, generators)', 'Glycerin (for soap, compost)'],
-              connections: ['ranch-operations', 'soil-program'], // Added connections
+              connections: ['ranch-operations', 'soil-program'],
               feedsInto: [{id: 'ranch-operations', label: 'Fuel for Ranch Operations'}, {id: 'soil-program', label: 'Soil Program (Glycerin)'}],
               type: 'resource',
-              materialOptions: { color: 0xFFD700, emissive: 0xFFD700, emissiveIntensity: 0.5 }, // Gold glowing
-              hasParticles: true // Add particles
+              particleColor1: 0xFFD700, particleColor2: 0xFFA500, particleCount: 1200, // Gold to Orange (energetic glow)
+              hasParticles: true // Add particles for extra glow
             },
 
             { id: 'artist-studio', title: 'Artist Residency & Studio', description: 'A creative hub where local and visiting artists transform inorganic recyclables and found objects into art and functional items.',
               inputs: ['Clean metal, plastic, glass (from Recycle Hub)', 'Wood scraps, found objects', 'Local and visiting artists'],
               outputs: ['Large-scale art installations', 'Upcycled functional art', 'Circular packaging solutions'],
-              connections: ['skincare-line', 'campground-tourism'], // Added connections
+              connections: ['skincare-line', 'campground-tourism'],
               feedsInto: [{id: 'skincare-line', label: 'Skincare Line (jars/branding)'}, {id: 'campground-tourism', label: 'Campground Decor / Sculpture Park'}],
-              type: 'community' }, // Default sphere, type color
+              type: 'community',
+              particleColor1: 0x8A2BE2, particleColor2: 0xBA55D3, particleCount: 1000 // Blue Violet to Medium Orchid (artistic colors)
+            },
 
             { id: 'campground-tourism', title: 'Campground + Sculpture Park', description: 'A unique destination combining eco-cabins, outdoor exhibits, and educational events to promote regenerative tourism and community engagement.',
               inputs: ['Artist installations', 'Upcycled materials', 'Natural building elements'],
               outputs: ['Revenue from eco-tourism', 'Educational awareness', 'Community engagement'],
-              connections: ['education-loop', 'artist-studio', 'fundraising'], // Added connections
+              connections: ['education-loop', 'artist-studio', 'fundraising'],
               feedsInto: [{id: 'education-loop', label: 'Education Loop'}, {id: 'artist-studio', label: 'Artist Residencies'}, {id: 'fundraising', label: 'Fundraising and Grants'}],
-              type: 'community' }, // Default sphere, type color
+              type: 'community',
+              particleColor1: 0x5F9EA0, particleColor2: 0xAFEEEE, particleCount: 1000 // Cadet Blue to Pale Turquoise (outdoor/nature colors)
+            },
 
             // External nodes for clarity (no direct connections from them in this flow)
-            { id: 'culinary-retreat-programs', title: 'Culinary & Retreat Programs', description: 'On-site culinary experiences and retreat offerings that utilize fresh produce from the gardens.', inputs: [], outputs: [], connections: [], feedsInto: [], type: 'external' },
-            { id: 'retail-sales', title: 'Retail Sales', description: 'Channels for selling Spirit Well Ranch products, including local markets and online stores.', inputs: [], outputs: [], connections: [], feedsInto: [], type: 'external' },
-            { id: 'ranch-operations', title: 'Ranch Operations', description: 'The daily functioning and energy consumption of the ranch, powered by sustainable energy sources like biodiesel.', inputs: [], outputs: [], connections: [], feedsInto: [], type: 'external' },
-            { id: 'education-loop', title: 'Education Loop', description: 'Ongoing learning and knowledge sharing within the system, fostering a deeper understanding of regenerative practices.', inputs: [], outputs: [], connections: [], feedsInto: [], type: 'external',
-              materialOptions: { color: 0xADD8E6, emissive: 0xADD8E6, emissiveIntensity: 0.3 } // Light blue glowing
+            { id: 'culinary-retreat-programs', title: 'Culinary & Retreat Programs', description: 'On-site culinary experiences and retreat offerings that utilize fresh produce from the gardens.', inputs: [], outputs: [], connections: [], feedsInto: [], type: 'external',
+              particleColor1: 0xFF4500, particleColor2: 0xFFD700, particleCount: 800 // Orange Red to Gold (culinary colors)
             },
-            { id: 'fundraising', title: 'Fundraising & Grants', description: 'Support mechanisms for the ranch\'s initiatives, enabling expansion and continued regenerative efforts.', inputs: [], outputs: [], connections: [], feedsInto: [], type: 'external' },
+            { id: 'retail-sales', title: 'Retail Sales', description: 'Channels for selling Spirit Well Ranch products, including local markets and online stores.', inputs: [], outputs: [], connections: [], feedsInto: [], type: 'external',
+              particleColor1: 0x708090, particleColor2: 0xC0C0C0, particleCount: 800 // Slate Gray to Silver (commercial/sales colors)
+            },
+            { id: 'ranch-operations', title: 'Ranch Operations', description: 'The daily functioning and energy consumption of the ranch, powered by sustainable energy sources like biodiesel.', inputs: [], outputs: [], connections: [], feedsInto: [], type: 'external',
+              particleColor1: 0x36454F, particleColor2: 0x708090, particleCount: 800 // Charcoal to Slate Gray (operational/industrial)
+            },
+            { id: 'education-loop', title: 'Education Loop', description: 'Ongoing learning and knowledge sharing within the system, fostering a deeper understanding of regenerative practices.', inputs: [], outputs: [], connections: [], feedsInto: [], type: 'external',
+              particleColor1: 0x4169E1, particleColor2: 0x87CEEB, particleCount: 1200 // Royal Blue to Sky Blue (knowledge/education glow)
+            },
+            { id: 'fundraising', title: 'Fundraising & Grants', description: 'Support mechanisms for the ranch\'s initiatives, enabling expansion and continued regenerative efforts.', inputs: [], outputs: [], connections: [], feedsInto: [], type: 'external',
+              particleColor1: 0xDAA520, particleColor2: 0xFFD700, particleCount: 800 // Goldenrod to Gold (funding colors)
+            },
         ];
-
-        // Mapping node types to colors (hexadecimal for Three.js) - primarily for default spheres
-        const nodeTypeColors = {
-            'core': 0xFDE047,      // Tailwind yellow-400
-            'biological': 0x6EE7B7, // Tailwind emerald-300
-            'product': 0x93C5FD,   // Tailwind blue-300
-            'resource': 0xFCA5A5,  // Tailwind red-300
-            'community': 0xD8B4FE, // Tailwind purple-300
-            'external': 0x9CA3AF   // Tailwind gray-400
-        };
 
         // Coordinates for 12450 Lime Kiln Road, Grass Valley, CA 95949
         const GRASS_VALLEY_LAT = 39.224151;
@@ -304,43 +315,9 @@
         function init() {
             // Scene setup
             scene = new THREE.Scene();
-            // Load background image
-            const textureLoader = new THREE.TextureLoader();
-            const imagePath = './images/regeneration_background.png'; // Path to the user's image
-
-            console.log(`Attempting to load background image from: ${imagePath}`); // Log the path being attempted
-
-            textureLoader.load(
-                imagePath,
-                function(texture) {
-                    scene.background = texture;
-                    console.log(`Successfully loaded background image from: ${imagePath}`);
-                },
-                undefined, // onProgress callback
-                function(err) {
-                    // Log the full error object for better debugging
-                    console.error(`An error occurred loading the background texture from "${imagePath}":`, err);
-                    // Fallback to a reliable placeholder if the user's image fails to load
-                    textureLoader.load(
-                        'https://placehold.co/1920x1080/0d1117/e2e8f0?text=Regenerative+Background+Fallback',
-                        function(fallbackTexture) {
-                            scene.background = fallbackTexture;
-                            console.log('Successfully loaded fallback background image.');
-                        },
-                        undefined,
-                        function(fallbackErr) {
-                            console.error('An error occurred loading the fallback background texture:', fallbackErr);
-                            scene.background = new THREE.Color(0x0d1117); // Final fallback to solid dark color
-                            console.log('Falling back to solid background color.');
-                        }
-                    );
-                }
-            );
-
 
             // Camera setup
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            // Camera position and target will be set after Earth sphere creation
 
             // Renderer setup
             renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -353,7 +330,6 @@
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
             controls.screenSpacePanning = false;
-            // minDistance/maxDistance will be set in createCentralEarthSphere
 
             // Lighting
             const ambientLight = new THREE.AmbientLight(0x404040); // Soft white light
@@ -369,38 +345,36 @@
             // Create nodes and connections
             createNodesAndConnections();
             createCentralEarthSphere(); // Create the new central Earth sphere
+            createUniverseSkybox(); // Create the universe skybox
 
             // Event listeners for window resize, mouse interaction, and TOUCH interaction
             window.addEventListener('resize', onWindowResize, false);
             window.addEventListener('mousemove', onMouseMove, false);
             window.addEventListener('click', onClick, false);
-            window.addEventListener('touchend', onTouchEnd, false); // Add touch event listener for mobile devices
+            window.addEventListener('touchend', onTouchEnd, false);
 
             // Set up the "Start Experience" button
             const zoomOutButton = document.getElementById('zoomOutButton');
-            zoomOutButton.innerText = 'Click Here to start the Spirit Well Ranch Circular Systems'; // Change button text
-            zoomOutButton.style.display = 'block'; // Ensure it's visible initially
+            zoomOutButton.innerText = 'Click Here to start the Spirit Well Ranch Circular Systems';
+            zoomOutButton.style.display = 'block';
 
             zoomOutButton.addEventListener('click', () => {
                 zoomToFullSystemView();
-                zoomOutButton.style.display = 'none'; // Hide button after clicking
+                zoomOutButton.style.display = 'none';
             });
             zoomOutButton.addEventListener('touchend', (e) => {
-                // Ensure the button's own event is handled and not propagated to the canvas/window
                 e.preventDefault();
                 e.stopPropagation();
                 zoomToFullSystemView();
-                zoomOutButton.style.display = 'none'; // Hide button after clicking
-            }, { passive: false }); // passive: false is crucial for preventDefault on touch events
+                zoomOutButton.style.display = 'none';
+            }, { passive: false });
         }
 
         // Function to convert Lat/Lon to Three.js Cartesian coordinates (Y-up)
         function latLonToCartesian(lat, lon, radius) {
-            // Convert latitude and longitude to radians
             const latRad = lat * (Math.PI / 180);
-            const lonRad = -lon * (Math.PI / 180); // Negative longitude for correct East/West
+            const lonRad = -lon * (Math.PI / 180);
 
-            // Spherical to Cartesian conversion
             const x = radius * Math.cos(latRad) * Math.sin(lonRad);
             const y = radius * Math.sin(latRad);
             const z = radius * Math.cos(latRad) * Math.cos(lonRad);
@@ -412,16 +386,15 @@
         function createTextSprite(message, color = '#FFFFFF', fontSize = 24) {
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
-            const font = `${fontSize}px Inter`; // Use Inter font
+            const font = `${fontSize}px Inter`;
             context.font = font;
 
-            // Measure text to set canvas size
             const metrics = context.measureText(message);
             const textWidth = metrics.width;
-            const textHeight = fontSize * 1.2; // Approximate height with some padding
+            const textHeight = fontSize * 1.2;
 
-            canvas.width = textWidth + 10; // Add padding
-            canvas.height = textHeight + 10; // Add padding
+            canvas.width = textWidth + 10;
+            canvas.height = textHeight + 10;
 
             context.font = font;
             context.fillStyle = color;
@@ -430,208 +403,429 @@
             context.fillText(message, canvas.width / 2, canvas.height / 2);
 
             const texture = new THREE.CanvasTexture(canvas);
-            texture.needsUpdate = true; // Important for dynamic textures
+            texture.needsUpdate = true;
 
             const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
             const sprite = new THREE.Sprite(spriteMaterial);
 
-            // Scale sprite based on text dimensions to maintain aspect ratio
-            sprite.scale.set(canvas.width * 0.1, canvas.height * 0.1, 1); // Adjust scale factor as needed
+            sprite.scale.set(canvas.width * 0.1, canvas.height * 0.1, 1);
 
             return sprite;
         }
 
-        // Function to create simple particle system for a node
-        function createParticleSystem(node) {
-            const particleCount = 100;
-            const particles = new THREE.BufferGeometry();
+        // Vertex Shader for Particle Nodes (with blinking/pulsing)
+        const particleNodeVertexShader = `
+            attribute float blinkOffset;
+            attribute vec3 color; // Per-particle color
+            uniform float uTime;
+            uniform float uPointSize;
+            uniform float uNodeRadius;
+            uniform vec3 uColor1; // Base color 1 from JS
+            uniform vec3 uColor2; // Base color 2 from JS
+
+            varying float vAlpha;
+            varying vec3 vColor;
+
+            void main() {
+                // Calculate position along the node's radius for color gradient
+                float distFromCenter = length(position.xyz);
+                float alphaGradient = distFromCenter / uNodeRadius;
+                vColor = mix(uColor1, uColor2, alphaGradient); // Interpolate color
+
+                // Firefly blinking/pulsing effect
+                float blinkFactor = sin(uTime * 5.0 + blinkOffset); // Faster blink
+                float opacity = clamp(blinkFactor * 1.0 + 0.5, 0.0, 1.0); // Pulsate opacity
+                float size = uPointSize * (1.0 + blinkFactor * 0.5); // Pulsate size
+
+                vAlpha = opacity;
+
+                vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                gl_PointSize = size * (1.0 / -mvPosition.z);
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `;
+
+        // Fragment Shader for Particle Nodes
+        const particleNodeFragmentShader = `
+            varying float vAlpha;
+            varying vec3 vColor;
+
+            void main() {
+                float r = 0.0;
+                vec2 cxy = 2.0 * gl_PointCoord - 1.0;
+                r = dot(cxy, cxy);
+                float alpha = smoothstep(1.0, 0.0, r) * vAlpha; // Circular fade
+
+                gl_FragColor = vec4(vColor, alpha);
+                if (gl_FragColor.a < 0.0001) discard;
+            }
+        `;
+
+        // Function to create a dense gradient particle system for a node
+        function createParticleNode(nodeData, position) {
+            const particleCount = nodeData.particleCount || 1000;
+            const nodeRadius = 3; // Visual radius for the particle sphere
+            const particlesGeometry = new THREE.BufferGeometry();
             const positions = [];
-            const particleSize = 0.5;
+            const blinkOffsets = []; // For firefly effect
 
             for (let i = 0; i < particleCount; i++) {
-                // Random position around the node
-                const x = (Math.random() - 0.5) * 10;
-                const y = (Math.random() - 0.5) * 10;
-                const z = (Math.random() - 0.5) * 10;
+                const r = nodeRadius * Math.cbrt(Math.random());
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(Math.random() * 2 - 1);
+
+                const x = r * Math.sin(phi) * Math.cos(theta);
+                const y = r * Math.sin(phi) * Math.sin(theta);
+                const z = r * Math.cos(phi);
                 positions.push(x, y, z);
+                blinkOffsets.push(Math.random() * Math.PI * 2);
             }
 
-            particles.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            particlesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            particlesGeometry.setAttribute('blinkOffset', new THREE.Float32BufferAttribute(blinkOffsets, 1));
 
-            const particleMaterial = new THREE.PointsMaterial({
-                color: 0xFFFFFF, // White particles
-                size: particleSize,
+            const particleMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    uTime: { value: 0.0 },
+                    uPointSize: { value: 0.05 }, // Very tiny dots
+                    uNodeRadius: { value: nodeRadius },
+                    uColor1: { value: new THREE.Color(nodeData.particleColor1) },
+                    uColor2: { value: new THREE.Color(nodeData.particleColor2) }
+                },
+                vertexShader: particleNodeVertexShader,
+                fragmentShader: particleNodeFragmentShader,
                 transparent: true,
-                opacity: 0.6,
-                blending: THREE.AdditiveBlending // For glowing effect
+                blending: THREE.AdditiveBlending,
+                depthWrite: false // Important for transparent particles
             });
 
-            const particleSystem = new THREE.Points(particles, particleMaterial);
-            node.add(particleSystem); // Add particles as a child of the node
-            particleSystems.push(particleSystem); // Store for animation
+            const particleSystem = new THREE.Points(particlesGeometry, particleMaterial);
+            particleSystem.position.copy(position);
+            particleSystem.userData = { ...nodeData, isParticleNode: true };
+            scene.add(particleSystem);
+            nodesMap.set(nodeData.id, particleSystem);
+            particleSystems.push(particleSystem);
+
             return particleSystem;
         }
 
+        // Vertex Shader for Atmosphere Particles (with blinking/pulsing)
+        const atmosphereVertexShader = `
+            attribute float blinkOffset;
+            attribute vec3 color; // Per-particle color
+            uniform float uTime;
+            uniform float uPointSize;
+
+            varying float vAlpha;
+            varying vec3 vColor;
+
+            void main() {
+                vColor = color; // Pass color to fragment shader
+
+                // Firefly blinking/pulsing effect
+                float blinkFactor = sin(uTime * 4.0 + blinkOffset); // Slightly different blink speed
+                float opacity = clamp(blinkFactor * 1.0 + 0.5, 0.0, 1.0);
+                float size = uPointSize * (1.0 + blinkFactor * 0.5);
+
+                vAlpha = opacity;
+
+                vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                gl_PointSize = size * (1.0 / -mvPosition.z);
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `;
+
+        // Fragment Shader for Atmosphere Particles (same as node fragment shader)
+        const atmosphereFragmentShader = `
+            varying float vAlpha;
+            varying vec3 vColor;
+
+            void main() {
+                float r = 0.0;
+                vec2 cxy = 2.0 * gl_PointCoord - 1.0;
+                r = dot(cxy, cxy);
+                float alpha = smoothstep(1.0, 0.0, r) * vAlpha;
+
+                gl_FragColor = vec4(vColor, alpha);
+                if (gl_FragColor.a < 0.0001) discard;
+            }
+        `;
+
+
+        // Function to create a laser beam particle system between two nodes
+        function createLaserBeam(sourceNode, targetNode) {
+            const path = new THREE.Line3(sourceNode.position, targetNode.position);
+            const length = path.distance();
+            const particleCount = Math.floor(length * 20); // Even denser particles for beams
+            const particlesGeometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const alphas = new Float32Array(particleCount); // For pulsing effect
+            const offsets = new Float32Array(particleCount); // Unique offset for each particle
+            const speeds = new Float32Array(particleCount); // Speeds for each particle
+
+            // Get colors from source/target nodes' particleColor1
+            const sourceColor = new THREE.Color(sourceNode.userData.particleColor1 || 0x00FFFF); // Default cyan
+            const targetColor = new THREE.Color(targetNode.userData.particleColor1 || 0x00FFFF); // Default cyan
+
+            const colors = new Float32Array(particleCount * 3); // For gradient color
+
+            for (let i = 0; i < particleCount; i++) {
+                const t = i / (particleCount - 1); // Normalized position along the line (0 to 1)
+
+                // Initial position along the line
+                const point = new THREE.Vector3().lerpVectors(sourceNode.position, targetNode.position, t);
+                positions[i * 3] = point.x;
+                positions[i * 3 + 1] = point.y;
+                positions[i * 3 + 2] = point.z;
+
+                alphas[i] = Math.random(); // Random initial opacity
+                offsets[i] = Math.random() * Math.PI * 2; // Random animation offset
+                speeds[i] = Math.random() * 0.5 + 0.5; // Random speed for varied pulsing (0.5 to 1.0)
+
+                // Calculate gradient color
+                const mixedColor = new THREE.Color().copy(sourceColor).lerp(targetColor, t);
+                colors[i * 3] = mixedColor.r;
+                colors[i * 3 + 1] = mixedColor.g;
+                colors[i * 3 + 2] = mixedColor.b;
+            }
+
+            particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particlesGeometry.setAttribute('alpha', new THREE.BufferAttribute(alphas, 1));
+            particlesGeometry.setAttribute('offset', new THREE.BufferAttribute(offsets, 1));
+            particlesGeometry.setAttribute('speed', new THREE.BufferAttribute(speeds, 1));
+            particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const laserVertexShader = `
+                attribute float alpha;
+                attribute float offset;
+                attribute vec3 color;
+                attribute float speed;
+                uniform float uTime;
+                uniform float uPointSize;
+                uniform float uTravelSpeed;
+                uniform float uPulseSpeed;
+                uniform vec3 uSourcePos;
+                uniform vec3 uTargetPos;
+
+                varying float vAlpha;
+                varying vec3 vColor;
+
+                void main() {
+                    vColor = color;
+
+                    float t = length(position.xyz - uSourcePos) / length(uTargetPos - uSourcePos);
+                    t = clamp(t, 0.0, 1.0);
+
+                    float travelProgress = fract(uTime * uTravelSpeed * speed + offset);
+                    float currentT = fract(t + travelProgress);
+
+                    vec3 animatedPosition = mix(uSourcePos, uTargetPos, currentT);
+
+                    float pulseFactor = sin(currentT * uPulseSpeed * 3.14159 * 2.0 + uTime * 2.0);
+                    float size = uPointSize * (1.0 + pulseFactor * 0.5);
+                    float opacity = clamp(pulseFactor * 1.5 + 0.5, 0.0, 1.0);
+
+                    vAlpha = opacity * alpha;
+
+                    vec4 mvPosition = modelViewMatrix * vec4(animatedPosition, 1.0);
+                    gl_PointSize = size * (1.0 / -mvPosition.z);
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            `;
+
+            const laserFragmentShader = `
+                varying float vAlpha;
+                varying vec3 vColor;
+
+                void main() {
+                    float r = 0.0;
+                    vec2 cxy = 2.0 * gl_PointCoord - 1.0;
+                    r = dot(cxy, cxy);
+                    float alpha = smoothstep(1.0, 0.0, r) * vAlpha;
+
+                    gl_FragColor = vec4(vColor, alpha);
+                    if (gl_FragColor.a < 0.0001) discard;
+                }
+            `;
+
+            const laserMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    uTime: { value: 0.0 },
+                    uPointSize: { value: 1.0 }, // Base particle size for laser
+                    uTravelSpeed: { value: 0.1 }, // Speed of particles traveling along beam
+                    uPulseSpeed: { value: 1.0 }, // Speed of the pulse itself
+                    uSourcePos: { value: sourceNode.position },
+                    uTargetPos: { value: targetNode.position },
+                    uColor1: { value: sourceColor },
+                    uColor2: { value: targetColor }
+                },
+                vertexShader: laserVertexShader,
+                fragmentShader: laserFragmentShader,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+
+            const laserBeam = new THREE.Points(particlesGeometry, laserMaterial);
+            laserBeam.userData.animationOffset = Math.random();
+            laserBeams.push(laserBeam);
+            scene.add(laserBeam);
+            return laserBeam;
+        }
+
+
         // Function to create the central Earth sphere with particles
         function createCentralEarthSphere() {
-            const earthRadius = EARTH_RADIUS_GLOBAL; // Use global constant
-            const earthSegments = 64; // High resolution for Earth
+            const earthRadius = EARTH_RADIUS_GLOBAL;
+            const earthSegments = 64;
 
-            // Earth Geometry and Material
             const earthGeometry = new THREE.SphereGeometry(earthRadius, earthSegments, earthSegments);
             const textureLoader = new THREE.TextureLoader();
 
-            // Load Earth texture
             textureLoader.load(
-                'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg', // High-res Earth texture
+                'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
                 function(earthTexture) {
                     const earthMaterial = new THREE.MeshPhongMaterial({
                         map: earthTexture,
                         specular: 0x333333,
                         shininess: 15
                     });
-                    centralEarthSphere = new THREE.Mesh(earthGeometry, earthMaterial); // Assign to global variable
-                    centralEarthSphere.position.set(0, 0, 0); // Center of the scene
+                    centralEarthSphere = new THREE.Mesh(earthGeometry, earthMaterial);
+                    centralEarthSphere.position.set(0, 0, 0);
                     scene.add(centralEarthSphere);
 
                     // Add atmospheric particles around Earth
-                    const atmosphereParticleCount = 500;
-                    const atmosphereParticles = new THREE.BufferGeometry();
+                    const atmosphereParticleCount = 2000; // Increased count
+                    const atmosphereParticlesGeometry = new THREE.BufferGeometry();
                     const atmospherePositions = [];
-                    const atmosphereColors = [];
-                    const atmosphereParticleSize = 0.8;
+                    const atmosphereColors = []; // For multicolor firefly
+                    const atmosphereBlinkOffsets = []; // For firefly effect
 
                     for (let i = 0; i < atmosphereParticleCount; i++) {
-                        // Position particles slightly outside the Earth sphere
-                        const radiusOffset = earthRadius + (Math.random() * 5); // Particles 0 to 5 units outside
-                        const phi = Math.acos(-1 + (2 * i) / atmosphereParticleCount);
-                        const theta = Math.sqrt(atmosphereParticleCount * Math.PI) * phi;
+                        const radiusOffset = earthRadius + (Math.random() * 5);
+                        const phi = Math.acos(Math.random() * 2 - 1); // Distribute more evenly
+                        const theta = Math.random() * Math.PI * 2;
 
-                        const x = radiusOffset * Math.cos(theta) * Math.sin(phi);
-                        const y = radiusOffset * Math.sin(theta) * Math.sin(phi);
+                        const x = radiusOffset * Math.sin(phi) * Math.cos(theta);
+                        const y = radiusOffset * Math.sin(phi) * Math.sin(theta);
                         const z = radiusOffset * Math.cos(phi);
                         atmospherePositions.push(x, y, z);
 
-                        // Random blueish/white color for atmosphere
+                        // Multicolor firefly effect: broader HSL range
                         const color = new THREE.Color();
-                        color.setHSL(0.6 + Math.random() * 0.1, 0.5 + Math.random() * 0.5, 0.7 + Math.random() * 0.3); // HSL for blueish white
+                        color.setHSL(Math.random(), 0.5 + Math.random() * 0.5, 0.7 + Math.random() * 0.3); // Broader hue range
                         atmosphereColors.push(color.r, color.g, color.b);
+                        atmosphereBlinkOffsets.push(Math.random() * Math.PI * 2);
                     }
 
-                    atmosphereParticles.setAttribute('position', new THREE.Float32BufferAttribute(atmospherePositions, 3));
-                    atmosphereParticles.setAttribute('color', new THREE.Float32BufferAttribute(atmosphereColors, 3));
+                    atmosphereParticlesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(atmospherePositions, 3));
+                    atmosphereParticlesGeometry.setAttribute('color', new THREE.Float32BufferAttribute(atmosphereColors, 3));
+                    atmosphereParticlesGeometry.setAttribute('blinkOffset', new THREE.Float32BufferAttribute(atmosphereBlinkOffsets, 1)); // Add blink offset
 
-                    const atmosphereMaterial = new THREE.PointsMaterial({
-                        size: atmosphereParticleSize,
-                        vertexColors: true, // Use colors from geometry
+                    const atmosphereMaterial = new THREE.ShaderMaterial({
+                        uniforms: {
+                            uTime: { value: 0.0 },
+                            uPointSize: { value: 0.1 } // Tiny dots for atmosphere
+                        },
+                        vertexShader: atmosphereVertexShader,
+                        fragmentShader: atmosphereFragmentShader,
                         transparent: true,
-                        opacity: 0.8,
-                        blending: THREE.AdditiveBlending // For glowing effect
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false // Important for transparent particles
                     });
 
-                    earthAtmosphereParticles = new THREE.Points(atmosphereParticles, atmosphereMaterial);
+                    earthAtmosphereParticles = new THREE.Points(atmosphereParticlesGeometry, atmosphereMaterial);
                     scene.add(earthAtmosphereParticles);
 
                     // --- Set Initial Camera Position After Earth is Loaded ---
                     const mapPointOnEarth = latLonToCartesian(GRASS_VALLEY_LAT, GRASS_VALLEY_LON, earthRadius);
-                    // Camera position is offset from the map point to look at it
                     INITIAL_MAP_CAMERA_POSITION = mapPointOnEarth.clone().normalize().multiplyScalar(earthRadius + EARTH_START_ZOOM_DISTANCE);
                     INITIAL_MAP_CONTROLS_TARGET = mapPointOnEarth.clone();
 
                     camera.position.copy(INITIAL_MAP_CAMERA_POSITION);
                     controls.target.copy(INITIAL_MAP_CONTROLS_TARGET);
-                    controls.minDistance = earthRadius + 0.1; // Allow very close zoom
-                    controls.maxDistance = 200; // Max zoom out distance
+                    controls.minDistance = earthRadius + 0.1;
+                    controls.maxDistance = 200;
                     controls.update();
                 },
-                undefined, // onProgress
+                undefined,
                 function(err) {
                     console.error('An error occurred loading the Earth texture:', err);
-                    // Fallback to a plain blue sphere if texture fails
                     const fallbackMaterial = new THREE.MeshPhongMaterial({ color: 0x0000FF });
-                    centralEarthSphere = new THREE.Mesh(earthGeometry, fallbackMaterial); // Assign to global variable
+                    centralEarthSphere = new THREE.Mesh(earthGeometry, fallbackMaterial);
                     centralEarthSphere.position.set(0, 0, 0);
                     scene.add(centralEarthSphere);
 
-                     // --- Set Initial Camera Position Even if Earth Texture Fails ---
                     const mapPointOnEarth = latLonToCartesian(GRASS_VALLEY_LAT, GRASS_VALLEY_LON, earthRadius);
                     INITIAL_MAP_CAMERA_POSITION = mapPointOnEarth.clone().normalize().multiplyScalar(earthRadius + EARTH_START_ZOOM_DISTANCE);
                     INITIAL_MAP_CONTROLS_TARGET = mapPointOnEarth.clone();
 
                     camera.position.copy(INITIAL_MAP_CAMERA_POSITION);
                     controls.target.copy(INITIAL_MAP_CONTROLS_TARGET);
-                    controls.minDistance = earthRadius + 0.1; // Allow very close zoom
-                    controls.maxDistance = 200; // Max zoom out distance
+                    controls.minDistance = earthRadius + 0.1;
+                    controls.maxDistance = 200;
                     controls.update();
                 }
             );
         }
 
+        // Function to create the universe skybox using a Milky Way texture
+        function createUniverseSkybox() {
+            const skyboxGeometry = new THREE.SphereGeometry(500, 32, 32);
+            const textureLoader = new THREE.TextureLoader();
+
+            const milkyWayTexturePath = 'https://cdn.jsdelivr.net/gh/jeromeetienne/threex.planets@master/images/galaxy_starfield.png';
+
+            textureLoader.load(
+                milkyWayTexturePath,
+                function(texture) {
+                    const skyboxMaterial = new THREE.MeshBasicMaterial({
+                        map: texture,
+                        side: THREE.BackSide
+                    });
+                    const skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterial);
+                    scene.add(skybox);
+                    console.log(`Successfully loaded Milky Way skybox from: ${milkyWayTexturePath}`);
+                },
+                undefined,
+                function(err) {
+                    console.error(`An error occurred loading the Milky Way texture from "${milkyWayTexturePath}":`, err);
+                    const fallbackMaterial = new THREE.MeshBasicMaterial({ color: 0x000033, side: THREE.BackSide });
+                    const skybox = new THREE.Mesh(skyboxGeometry, fallbackMaterial);
+                    scene.add(skybox);
+                    console.log('Falling back to solid dark blue skybox.');
+                }
+            );
+        }
 
         // Function to create 3D nodes and connections
         function createNodesAndConnections() {
             const numNodes = flowData.length;
-            const orbitRadius = 40; // Increased radius for nodes to orbit the new Earth sphere
-            const nodeSize = 3; // Size of each node sphere
-            const labelOffset = nodeSize + 2; // Offset for the label above the node
+            const orbitRadius = 60;
+            const nodeSize = 3;
+            const labelOffset = nodeSize + 2;
 
-            // Create nodes
             flowData.forEach((nodeData, i) => {
-                let geometry;
-                // Choose geometry based on nodeData.geometryType
-                switch (nodeData.geometryType) {
-                    case 'box':
-                        geometry = new THREE.BoxGeometry(nodeSize * 2, nodeSize * 2, nodeSize * 2); // Larger box for visual distinction
-                        break;
-                    case 'cone': // For pyramid-like shape
-                        geometry = new THREE.ConeGeometry(nodeSize * 1.5, nodeSize * 3, 32); // Radius, Height, Segments
-                        break;
-                    case 'sphere':
-                    default:
-                        geometry = new THREE.SphereGeometry(nodeSize, 64, 64); // Increased segments for smoother geometry
-                        break;
-                }
+                const phi = Math.acos(1 - (2 * (i + 0.5)) / numNodes);
+                const theta = Math.PI * (1 + Math.sqrt(5)) * (i + 0.5);
 
-                // Choose material based on nodeData.materialOptions or default type color
-                const materialOptions = nodeData.materialOptions || {};
-                const material = new THREE.MeshPhongMaterial({
-                    color: materialOptions.color || nodeTypeColors[nodeData.type] || 0xffffff,
-                    emissive: materialOptions.emissive || 0x000000,
-                    emissiveIntensity: materialOptions.emissiveIntensity || 0,
-                    specular: materialOptions.specular || 0x111111,
-                    shininess: materialOptions.shininess || 30
-                });
+                const x = orbitRadius * Math.cos(theta) * Math.sin(phi);
+                const y = orbitRadius * Math.sin(theta) * Math.sin(phi);
+                const z = orbitRadius * Math.cos(phi);
 
-                const node = new THREE.Mesh(geometry, material);
-                // Position nodes in a circle on the X-Y plane around the central Earth
-                const angle = (i / numNodes) * Math.PI * 2; // Distribute evenly around a circle
+                const node = createParticleNode(nodeData, new THREE.Vector3(x, y, z));
 
-                const x = orbitRadius * Math.cos(angle);
-                const y = orbitRadius * Math.sin(angle);
-                const z = 0; // Keep z-coordinate constant for a flat circular arrangement
-
-                node.position.set(x, y, z);
-                node.userData = { ...nodeData }; // Store all data for interaction
-                scene.add(node);
-                nodesMap.set(nodeData.id, node); // Store the Three.js object
-
-                // Create and attach text label
-                const labelSprite = createTextSprite(nodeData.title, '#E2E8F0', 20); // Light text color for labels
-                labelSprite.position.set(x, y + labelOffset, z); // Position above the node
+                const labelSprite = createTextSprite(nodeData.title, '#E2E8F0', 20);
+                labelSprite.position.set(x, y + labelOffset, z);
                 scene.add(labelSprite);
 
-                // Add particles if specified for this node
-                if (nodeData.hasParticles) {
-                    createParticleSystem(node);
-                }
+                node.userData.labelSprite = labelSprite;
             });
 
-            // Create connections (lines)
             flowData.forEach(sourceNodeData => {
                 const sourceNode = nodesMap.get(sourceNodeData.id);
                 if (!sourceNode) return;
 
-                // Ensure connections array exists and is an array before iterating
                 if (sourceNodeData.connections && Array.isArray(sourceNodeData.connections)) {
                     sourceNodeData.connections.forEach(targetId => {
                         const targetNode = nodesMap.get(targetId);
@@ -639,14 +833,7 @@
                             console.warn(`Target node with ID ${targetId} not found for connection from ${sourceNodeData.id}`);
                             return;
                         }
-
-                        const material = new THREE.LineBasicMaterial({ color: 0x34d399, linewidth: 1 }); // Emerald green line
-                        const points = [];
-                        points.push(sourceNode.position);
-                        points.push(targetNode.position);
-                        const geometry = new THREE.BufferGeometry().setFromPoints(points);
-                        const line = new THREE.Line(geometry, material);
-                        scene.add(line);
+                        createLaserBeam(sourceNode, targetNode);
                     });
                 }
             });
@@ -661,60 +848,60 @@
 
         // Handle mouse movement for hover effect
         function onMouseMove(event) {
-            // Calculate mouse position in normalized device coordinates (-1 to +1)
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         }
 
         // Internal function for click/touch logic, called by both onClick and onTouchEnd
         function onClickInternal() {
-            // Only allow clicks if controls are enabled (i.e., not in the middle of a camera animation or panel is open)
-            if (!controls.enabled) return; // This correctly prevents clicks on the 3D scene when controls are disabled
+            if (!controls.enabled) return;
 
             raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(scene.children);
+            const intersects = raycaster.intersectObjects(scene.children, true);
 
             if (intersects.length > 0) {
-                const clickedNode = intersects.find(obj => obj.object.userData && obj.object.userData.id);
-                if (clickedNode) {
-                    zoomToNode(clickedNode.object.userData.id);
+                const clickedObject = intersects.find(obj =>
+                    obj.object.userData && obj.object.userData.id &&
+                    (obj.object.userData.isParticleNode || obj.object === centralEarthSphere)
+                );
+
+                if (clickedObject) {
+                    if (clickedObject.object === centralEarthSphere) {
+                        console.log("Clicked Earth Sphere!");
+                    } else if (clickedObject.object.userData.isParticleNode) {
+                        zoomToNode(clickedObject.object.userData.id);
+                    }
                 }
             }
         }
 
         // Handle mouse click for desktop
         function onClick(event) {
-             // Calculate mouse position in normalized device coordinates (-1 to +1)
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-            onClickInternal(); // Call the shared internal logic
+            onClickInternal();
         }
 
         // Function to handle touch end event for 'clicking' on mobile
         function onTouchEnd(event) {
-            // Check if the touch originated on an element within the info panel
             const infoPanel = document.getElementById('info-panel');
-            const zoomOutButton = document.getElementById('zoomOutButton'); // Get reference to the button
+            const zoomOutButton = document.getElementById('zoomOutButton');
 
             let isTouchOnUI = false;
             let targetElement = event.target;
             while (targetElement) {
-                if (targetElement === infoPanel || targetElement === zoomOutButton) { // Check both panel and button
+                if (targetElement === infoPanel || targetElement === zoomOutButton) {
                     isTouchOnUI = true;
                     break;
                 }
                 targetElement = targetElement.parentNode;
             }
 
-            // If touch is on a UI element, let its own event handlers take over.
-            // Do NOT preventDefault or stopPropagation on the window/document level.
             if (isTouchOnUI) {
                 return;
             } else {
-                // If touch is outside any UI element (i.e., on the canvas), prevent default behavior
                 event.preventDefault();
-                event.stopPropagation(); // Also stop propagation to be safe
-                // And then process the 3D scene click
+                event.stopPropagation();
                 if (event.changedTouches.length > 0) {
                     const touch = event.changedTouches[0];
                     mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
@@ -724,10 +911,9 @@
             }
         }
 
-
         // Function to animate camera to a target position and look at a target point
         function animateCamera(targetPosition, targetLookAt, duration = 1) {
-            controls.enabled = false; // Disable controls during animation
+            controls.enabled = false;
 
             gsap.to(camera.position, {
                 duration: duration,
@@ -736,23 +922,21 @@
                 z: targetPosition.z,
                 ease: "power2.inOut",
                 onUpdate: function() {
-                    // Update controls.target during camera movement to keep looking at the target
                     controls.target.lerp(targetLookAt, this.progress());
                     controls.update();
                 },
                 onComplete: function() {
-                    // Only re-enable controls if the info panel is NOT currently visible
                     const infoPanel = document.getElementById('info-panel');
                     if (infoPanel.style.display !== 'block') {
                         controls.enabled = true;
                     }
-                    controls.target.copy(targetLookAt); // Ensure target is exactly set
+                    controls.target.copy(targetLookAt);
                     controls.update();
                 }
             });
         }
 
-        // Function to zoom to a specific node
+        // Function to zoom to a specific node (now a particle system)
         function zoomToNode(nodeId) {
             const node = nodesMap.get(nodeId);
             if (!node) {
@@ -761,17 +945,16 @@
             }
 
             const nodePosition = node.position;
-            // Calculate a camera position slightly in front of the node
-            const zoomDistance = 15; // How far the camera should be from the node
+            const zoomDistance = 15;
             const targetPosition = new THREE.Vector3().copy(nodePosition).add(new THREE.Vector3(0, 0, zoomDistance));
 
-            animateCamera(targetPosition, nodePosition, 1.5); // Animate over 1.5 seconds
-            displayNodeInfo(node.userData); // Display detailed info for the clicked node
+            animateCamera(targetPosition, nodePosition, 1.5);
+            displayNodeInfo(node.userData);
         }
 
         // Function to zoom to the full system view
         function zoomToFullSystemView() {
-            animateCamera(FULL_SYSTEM_VIEW_CAMERA_POSITION, FULL_SYSTEM_VIEW_CONTROLS_TARGET, 2); // Longer animation for initial zoom out
+            animateCamera(FULL_SYSTEM_VIEW_CAMERA_POSITION, FULL_SYSTEM_VIEW_CONTROLS_TARGET, 2);
             hideInfoPanel();
         }
 
@@ -782,9 +965,8 @@
             document.getElementById('info-description').innerText = nodeData.description;
 
             const infoDetails = document.getElementById('info-details');
-            infoDetails.innerHTML = ''; // Clear previous details
+            infoDetails.innerHTML = '';
 
-            // Add Inputs
             if (nodeData.inputs && nodeData.inputs.length > 0) {
                 const inputsTitle = document.createElement('h4');
                 inputsTitle.innerText = 'Inputs:';
@@ -798,7 +980,6 @@
                 infoDetails.appendChild(inputsList);
             }
 
-            // Add Outputs
             if (nodeData.outputs && nodeData.outputs.length > 0) {
                 const outputsTitle = document.createElement('h4');
                 outputsTitle.innerText = 'Outputs:';
@@ -812,43 +993,39 @@
                 infoDetails.appendChild(outputsList);
             }
 
-            // Add Feeds Into / Connected Systems
             const navButtonsContainer = document.getElementById('nav-buttons');
-            navButtonsContainer.innerHTML = ''; // Clear previous buttons
+            navButtonsContainer.innerHTML = '';
 
-            // Home Button
             const homeButton = document.createElement('button');
             homeButton.className = 'nav-button home';
             homeButton.innerText = 'Zoom Out to Home';
-            homeButton.addEventListener('click', zoomToFullSystemView); // For desktop clicks
-            homeButton.addEventListener('touchend', (e) => { // For mobile taps
-                e.preventDefault(); // Stop default touch behavior (e.g., scrolling)
-                e.stopPropagation(); // Stop event from bubbling up to canvas/window
+            homeButton.addEventListener('click', zoomToFullSystemView);
+            homeButton.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 zoomToFullSystemView();
-            }, { passive: false }); // crucial for preventDefault on touch events
+            }, { passive: false });
             navButtonsContainer.appendChild(homeButton);
 
             if (nodeData.feedsInto && nodeData.feedsInto.length > 0) {
                 const connectedTitle = document.createElement('h4');
                 connectedTitle.innerText = 'Connected Systems:';
-                infoDetails.appendChild(connectedTitle); // Add title inside info-details
-                // Add connected system buttons
+                infoDetails.appendChild(connectedTitle);
                 nodeData.feedsInto.forEach(connection => {
                     const connectedButton = document.createElement('button');
                     connectedButton.className = 'nav-button';
                     connectedButton.innerText = `Go to ${connection.label}`;
-                    connectedButton.addEventListener('click', () => zoomToNode(connection.id)); // For desktop clicks
-                    connectedButton.addEventListener('touchend', (e) => { // For mobile taps
-                        e.preventDefault(); // Stop default touch behavior
-                        e.stopPropagation(); // Stop event from bubbling up
+                    connectedButton.addEventListener('click', () => zoomToNode(connection.id));
+                    connectedButton.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         zoomToNode(connection.id);
-                    }, { passive: false }); // crucial for preventDefault on touch events
+                    }, { passive: false });
                     navButtonsContainer.appendChild(connectedButton);
                 });
             }
 
-            infoPanel.style.display = 'block'; // Show the info panel
-            // Disable controls when panel is open
+            infoPanel.style.display = 'block';
             if (controls) {
                 controls.enabled = false;
             }
@@ -858,7 +1035,6 @@
         function hideInfoPanel() {
             const infoPanel = document.getElementById('info-panel');
             infoPanel.style.display = 'none';
-            // Re-enable controls when panel is closed
             if (controls) {
                 controls.enabled = true;
             }
@@ -869,43 +1045,32 @@
             requestAnimationFrame(animate);
 
             // Update controls (only if they are enabled)
-            if (controls && controls.enabled) { // Only update if controls are enabled
+            if (controls && controls.enabled) {
                 controls.update();
             }
 
             // Animate particles for the central Earth atmosphere
-            if (earthAtmosphereParticles) {
+            if (earthAtmosphereParticles && earthAtmosphereParticles.material.uniforms) {
+                earthAtmosphereParticles.material.uniforms.uTime.value += 0.01;
                 earthAtmosphereParticles.rotation.y += 0.001; // Slow rotation
-                // Optional: subtle movement for a more organic feel
-                const positions = earthAtmosphereParticles.geometry.attributes.position.array;
-                const time = Date.now() * 0.0001;
-                for (let i = 0; i < positions.length; i += 3) {
-                    const originalX = positions[i];
-                    const originalY = positions[i + 1];
-                    const originalZ = positions[i + 2];
-                    positions[i] = originalX + Math.sin(time + originalY * 0.1) * 0.1;
-                    positions[i + 1] = originalY + Math.cos(time + originalZ * 0.1) * 0.1;
-                    positions[i + 2] = originalZ + Math.sin(time + originalX * 0.1) * 0.1;
-                }
-                earthAtmosphereParticles.geometry.attributes.position.needsUpdate = true;
             }
 
-            // Animate specific node particles if they exist
+            // Animate each particle system node (nodes that are particle clouds)
             particleSystems.forEach(ps => {
-                if (ps.parent && ps.parent.visible) { // Only animate if parent node is visible
-                    ps.rotation.y += 0.01;
-                    ps.rotation.x += 0.005;
-                    const positions = ps.geometry.attributes.position.array;
-                    const time = Date.now() * 0.001;
-                    for (let i = 0; i < positions.length; i += 3) {
-                        const originalX = positions[i];
-                        const originalY = positions[i + 1];
-                        const originalZ = positions[i + 2];
-                        positions[i] = originalX + Math.sin(time + originalY * 0.5) * 0.005;
-                        positions[i + 1] = originalY + Math.cos(time + originalZ * 0.5) * 0.005;
-                        positions[i + 2] = originalZ + Math.sin(time + originalX * 0.5) * 0.005;
-                    }
-                    ps.geometry.attributes.position.needsUpdate = true;
+                // Update uniform for shader animation
+                if (ps.material.uniforms && ps.material.uniforms.uTime) {
+                    ps.material.uniforms.uTime.value += 0.01;
+                }
+                // Subtle rotation for the particle cloud as a whole
+                ps.rotation.y += 0.002;
+                ps.rotation.x += 0.001;
+            });
+
+            // Animate laser beams
+            laserBeams.forEach(beam => {
+                // Update uniform for shader animation
+                if (beam.material.uniforms && beam.material.uniforms.uTime) {
+                    beam.material.uniforms.uTime.value += 0.01;
                 }
             });
 
@@ -913,33 +1078,63 @@
             // Raycasting for hover effect (only if controls are enabled)
             if (controls && controls.enabled) {
                 raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(scene.children);
+                const intersects = raycaster.intersectObjects(scene.children, true);
 
                 if (intersects.length > 0) {
-                    const hoveredNode = intersects.find(obj => obj.object.userData && obj.object.userData.id);
+                    const hoveredObject = intersects.find(obj =>
+                        obj.object.userData && obj.object.userData.id &&
+                        (obj.object.userData.isParticleNode || obj.object === centralEarthSphere)
+                    );
 
-                    if (hoveredNode) {
-                        if (INTERSECTED != hoveredNode.object) {
-                            // Restore previous intersected object's color
+                    if (hoveredObject) {
+                        if (INTERSECTED != hoveredObject.object) {
                             if (INTERSECTED) {
-                                INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
+                                if (INTERSECTED.isPoints && INTERSECTED.material.uniforms) {
+                                    // Reset to original color (from nodeData)
+                                    const originalColor = new THREE.Color(INTERSECTED.userData.particleColor1);
+                                    INTERSECTED.material.uniforms.uColor1.value.copy(originalColor);
+                                    INTERSECTED.material.uniforms.uColor2.value.copy(new THREE.Color(INTERSECTED.userData.particleColor2));
+                                    INTERSECTED.material.uniforms.uPointSize.value = 0.05; // Reset size
+                                } else if (INTERSECTED.material && INTERSECTED.material.emissive) {
+                                    INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
+                                }
                             }
-                            // Store current intersected object and change its color
-                            INTERSECTED = hoveredNode.object;
-                            INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
-                            INTERSECTED.material.emissive.setHex(0x222222); // Subtle glow on hover
+                            INTERSECTED = hoveredObject.object;
+                            if (INTERSECTED.isPoints && INTERSECTED.material.uniforms) {
+                                INTERSECTED.currentHex = INTERSECTED.material.uniforms.uColor1.value.getHex(); // Store original color
+                                INTERSECTED.material.uniforms.uColor1.value.setHex(0x00FF00); // Green glow on hover
+                                INTERSECTED.material.uniforms.uColor2.value.setHex(0x00FF00); // Green glow on hover
+                                INTERSECTED.material.uniforms.uPointSize.value = 0.1; // Slightly larger on hover
+                            } else if (INTERSECTED.material && INTERSECTED.material.emissive) {
+                                INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
+                                INTERSECTED.material.emissive.setHex(0x222222);
+                            }
                         }
                     } else {
-                        // No intersection or new object, restore previous
                         if (INTERSECTED) {
-                            INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
+                            if (INTERSECTED.isPoints && INTERSECTED.material.uniforms) {
+                                const originalColor1 = new THREE.Color(INTERSECTED.userData.particleColor1);
+                                const originalColor2 = new THREE.Color(INTERSECTED.userData.particleColor2);
+                                INTERSECTED.material.uniforms.uColor1.value.copy(originalColor1);
+                                INTERSECTED.material.uniforms.uColor2.value.copy(originalColor2);
+                                INTERSECTED.material.uniforms.uPointSize.value = 0.05; // Reset size
+                            } else if (INTERSECTED.material && INTERSECTED.material.emissive) {
+                                INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
+                            }
                         }
                         INTERSECTED = null;
                     }
                 } else {
-                    // No intersection, restore previous
                     if (INTERSECTED) {
-                        INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
+                        if (INTERSECTED.isPoints && INTERSECTED.material.uniforms) {
+                            const originalColor1 = new THREE.Color(INTERSECTED.userData.particleColor1);
+                            const originalColor2 = new THREE.Color(INTERSECTED.userData.particleColor2);
+                            INTERSECTED.material.uniforms.uColor1.value.copy(originalColor1);
+                            INTERSECTED.material.uniforms.uColor2.value.copy(originalColor2);
+                            INTERSECTED.material.uniforms.uPointSize.value = 0.05; // Reset size
+                        } else if (INTERSECTED.material && INTERSECTED.material.emissive) {
+                            INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
+                        }
                     }
                     INTERSECTED = null;
                 }
