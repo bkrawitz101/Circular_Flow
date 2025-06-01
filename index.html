@@ -241,7 +241,20 @@
         function init() {
             // Scene setup
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x0d1117); // Dark background
+            // Load background image
+            const textureLoader = new THREE.TextureLoader();
+            textureLoader.load(
+                'https://placehold.co/1920x1080/000000/FFFFFF/png?text=Regenerative+Background', // Placeholder for a regenerative image
+                function(texture) {
+                    scene.background = texture;
+                },
+                undefined,
+                function(err) {
+                    console.error('An error occurred loading the background texture:', err);
+                    scene.background = new THREE.Color(0x0d1117); // Fallback to dark color
+                }
+            );
+
 
             // Camera setup
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
