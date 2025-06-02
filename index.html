@@ -166,6 +166,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <script src="https://threejs.org/examples/js/loaders/FontLoader.js"></script>
+    <script src="https://threejs.org/examples/js/geometries/TextGeometry.js"></script>
     <script>
         // Global variables for Three.js scene
         let scene, camera, renderer, controls;
@@ -176,6 +178,9 @@
         let earthAtmosphereParticles; // Specific for Earth atmosphere particles
         let centralEarthSphere; // Reference to the central Earth sphere
         const laserBeams = []; // Store laser beam particle systems
+        const textLabels = []; // Store 3D text labels (now Meshes) for animation
+
+        let font; // Global variable to store the loaded font
 
         // Data structure representing the nodes and their connections
         const flowData = [
@@ -342,10 +347,32 @@
             raycaster = new THREE.Raycaster();
             mouse = new THREE.Vector2();
 
-            // Create nodes and connections
-            createNodesAndConnections();
-            createCentralEarthSphere(); // Create the new central Earth sphere
-            createUniverseSkybox(); // Create the universe skybox
+            // Load font first, then create nodes and other elements
+            const fontLoader = new THREE.FontLoader();
+            fontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (loadedFont) {
+                font = loadedFont; // Assign loaded font to global variable
+                console.log('Font loaded successfully!');
+
+                // Now create everything that depends on the font
+                createNodesAndConnections();
+                createCentralEarthSphere();
+                createUniverseSkybox();
+
+                // Set initial camera position and target here, after all elements are created
+                // (This was already handled in createCentralEarthSphere, but ensuring sequence)
+                // camera.position.copy(INITIAL_MAP_CAMERA_POSITION);
+                // controls.target.copy(INITIAL_MAP_CONTROLS_TARGET);
+                // controls.update();
+
+            }, undefined, function (err) {
+                console.error('An error occurred loading the font:', err);
+                // Fallback if font fails to load: proceed without 3D text or use simple sprites
+                // For now, we'll just log the error and proceed, 3D text won't show.
+                createNodesAndConnections(); // Still try to create nodes without 3D text
+                createCentralEarthSphere();
+                createUniverseSkybox();
+            });
+
 
             // Event listeners for window resize, mouse interaction, and TOUCH interaction
             window.addEventListener('resize', onWindowResize, false);
@@ -382,36 +409,62 @@
             return new THREE.Vector3(x, y, z);
         }
 
-        // Function to create a text sprite
-        function createTextSprite(message, color = '#FFFFFF', fontSize = 24) {
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            const font = `${fontSize}px Inter`;
-            context.font = font;
+        // Function to create 3D text label
+        function create3DTextLabel(message, color = 0x00FFFF, fontSize = 5, nodeRadius) {
+            if (!font) {
+                console.warn("Font not loaded, cannot create 3D text label.");
+                // Fallback to a simple sprite if font isn't loaded
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = 256; canvas.height = 64;
+                context.font = 'bold 30px Inter';
+                context.fillStyle = color;
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                context.fillText(message, canvas.width / 2, canvas.height / 2);
+                const texture = new THREE.CanvasTexture(canvas);
+                const material = new THREE.SpriteMaterial({ map: texture, color: 0xFFFFFF, transparent: true, blending: THREE.AdditiveBlending });
+                const sprite = new THREE.Sprite(material);
+                sprite.scale.set(nodeRadius * 2, nodeRadius * 0.5, 1); // Approximate scale
+                return sprite;
+            }
 
-            const metrics = context.measureText(message);
-            const textWidth = metrics.width;
-            const textHeight = fontSize * 1.2;
+            const textGeometry = new THREE.TextGeometry(message, {
+                font: font,
+                size: fontSize, // Use provided font size
+                height: 0.1, // Thickness of the text
+                curveSegments: 12,
+                bevelEnabled: false
+            });
 
-            canvas.width = textWidth + 10;
-            canvas.height = textHeight + 10;
+            textGeometry.computeBoundingBox();
+            // Center the text by translating its geometry
+            textGeometry.translate(
+                -(textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x) / 2,
+                -(textGeometry.boundingBox.max.y - textGeometry.boundingBox.min.y) / 2,
+                -(textGeometry.boundingBox.max.z - textGeometry.boundingBox.min.z) / 2
+            );
 
-            context.font = font;
-            context.fillStyle = color;
-            context.textAlign = 'center';
-            context.textBaseline = 'middle';
-            context.fillText(message, canvas.width / 2, canvas.height / 2);
+            const textMaterial = new THREE.MeshPhongMaterial({
+                color: color,
+                emissive: color,
+                emissiveIntensity: 0.5,
+                transparent: true,
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending
+            });
 
-            const texture = new THREE.CanvasTexture(canvas);
-            texture.needsUpdate = true;
+            const textMesh = new THREE.Mesh(textGeometry, textMaterial);
 
-            const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
-            const sprite = new THREE.Sprite(spriteMaterial);
+            // Store original emissive color for hover effect
+            textMesh.userData.originalEmissive = textMaterial.emissive.getHex();
+            textMesh.userData.isTextLabel = true;
 
-            sprite.scale.set(canvas.width * 0.1, canvas.height * 0.1, 1);
+            textLabels.push(textMesh);
 
-            return sprite;
+            return textMesh;
         }
+
 
         // Vertex Shader for Particle Nodes (with blinking/pulsing)
         const particleNodeVertexShader = `
@@ -432,7 +485,7 @@
                 float alphaGradient = distFromCenter / uNodeRadius;
                 vColor = mix(uColor1, uColor2, alphaGradient); // Interpolate color
 
-                // Firefly blinking/pulsing effect
+                // Firefly blinking/pulsating effect
                 float blinkFactor = sin(uTime * 5.0 + blinkOffset); // Faster blink
                 float opacity = clamp(blinkFactor * 1.0 + 0.5, 0.0, 1.0); // Pulsate opacity
                 float size = uPointSize * (1.0 + blinkFactor * 0.5); // Pulsate size
@@ -461,54 +514,6 @@
             }
         `;
 
-        // Function to create a dense gradient particle system for a node
-        function createParticleNode(nodeData, position) {
-            const particleCount = nodeData.particleCount || 1000;
-            const nodeRadius = 3; // Visual radius for the particle sphere
-            const particlesGeometry = new THREE.BufferGeometry();
-            const positions = [];
-            const blinkOffsets = []; // For firefly effect
-
-            for (let i = 0; i < particleCount; i++) {
-                const r = nodeRadius * Math.cbrt(Math.random());
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.acos(Math.random() * 2 - 1);
-
-                const x = r * Math.sin(phi) * Math.cos(theta);
-                const y = r * Math.sin(phi) * Math.sin(theta);
-                const z = r * Math.cos(phi);
-                positions.push(x, y, z);
-                blinkOffsets.push(Math.random() * Math.PI * 2);
-            }
-
-            particlesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-            particlesGeometry.setAttribute('blinkOffset', new THREE.Float32BufferAttribute(blinkOffsets, 1));
-
-            const particleMaterial = new THREE.ShaderMaterial({
-                uniforms: {
-                    uTime: { value: 0.0 },
-                    uPointSize: { value: 0.05 }, // Very tiny dots
-                    uNodeRadius: { value: nodeRadius },
-                    uColor1: { value: new THREE.Color(nodeData.particleColor1) },
-                    uColor2: { value: new THREE.Color(nodeData.particleColor2) }
-                },
-                vertexShader: particleNodeVertexShader,
-                fragmentShader: particleNodeFragmentShader,
-                transparent: true,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false // Important for transparent particles
-            });
-
-            const particleSystem = new THREE.Points(particlesGeometry, particleMaterial);
-            particleSystem.position.copy(position);
-            particleSystem.userData = { ...nodeData, isParticleNode: true };
-            scene.add(particleSystem);
-            nodesMap.set(nodeData.id, particleSystem);
-            particleSystems.push(particleSystem);
-
-            return particleSystem;
-        }
-
         // Vertex Shader for Atmosphere Particles (with blinking/pulsing)
         const atmosphereVertexShader = `
             attribute float blinkOffset;
@@ -522,7 +527,7 @@
             void main() {
                 vColor = color; // Pass color to fragment shader
 
-                // Firefly blinking/pulsing effect
+                // Firefly blinking/pulsating effect
                 float blinkFactor = sin(uTime * 4.0 + blinkOffset); // Slightly different blink speed
                 float opacity = clamp(blinkFactor * 1.0 + 0.5, 0.0, 1.0);
                 float size = uPointSize * (1.0 + blinkFactor * 0.5);
@@ -551,12 +556,82 @@
             }
         `;
 
+        // Function to create a dense gradient particle system for a node
+        function createParticleNode(nodeData, position) {
+            const particleCount = nodeData.particleCount || 1000; // Default particle count
+            const innerParticleRadius = 2.5; // Radius of the inner particle cloud
+            const outerSphereRadius = 3.5; // Radius of the outer translucent sphere
+            const sphereSegments = 32; // For the outer sphere
+
+            // --- Create the INNER Particle System ---
+            const particlesGeometry = new THREE.BufferGeometry();
+            const positions = [];
+            const blinkOffsets = []; // For firefly effect
+
+            for (let i = 0; i < particleCount; i++) {
+                const r = innerParticleRadius * Math.cbrt(Math.random()); // Distribute more evenly within volume
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(Math.random() * 2 - 1);
+
+                const x = r * Math.sin(phi) * Math.cos(theta);
+                const y = r * Math.sin(phi) * Math.sin(theta);
+                const z = r * Math.cos(phi);
+                positions.push(x, y, z);
+                blinkOffsets.push(Math.random() * Math.PI * 2);
+            }
+
+            particlesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            particlesGeometry.setAttribute('blinkOffset', new THREE.Float32BufferAttribute(blinkOffsets, 1));
+
+            const particleMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    uTime: { value: 0.0 },
+                    uPointSize: { value: 0.05 }, // Very tiny dots
+                    uNodeRadius: { value: innerParticleRadius },
+                    uColor1: { value: new THREE.Color(nodeData.particleColor1) },
+                    uColor2: { value: new THREE.Color(nodeData.particleColor2) }
+                },
+                vertexShader: particleNodeVertexShader,
+                fragmentShader: particleNodeFragmentShader,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+
+            const particleSystem = new THREE.Points(particlesGeometry, particleMaterial);
+            // particleSystem.position is relative to its parent (the outer sphere)
+            particleSystems.push(particleSystem); // Add to general particle systems for animation
+
+            // --- Create the OUTER Translucent Sphere (the clickable part) ---
+            const outerSphereGeometry = new THREE.SphereGeometry(outerSphereRadius, sphereSegments, sphereSegments);
+            const outerSphereMaterial = new THREE.MeshPhongMaterial({
+                color: nodeData.particleColor1, // Base color for the outer sphere
+                emissive: nodeData.particleColor1, // Emissive color for glow
+                emissiveIntensity: 0.1, // Subtle glow
+                transparent: true,
+                opacity: 0.4, // Increased opacity for the glass sphere
+                shininess: 50,
+                specular: 0x555555
+            });
+            const outerSphere = new THREE.Mesh(outerSphereGeometry, outerSphereMaterial);
+            outerSphere.position.copy(position); // Set the position of the outer sphere
+
+            // Make the particle system a child of the outer sphere
+            outerSphere.add(particleSystem);
+
+            // Store the outer sphere as the main interactive node
+            outerSphere.userData = { ...nodeData, isParticleNode: true, originalEmissive: outerSphereMaterial.emissive.getHex() };
+            scene.add(outerSphere);
+            nodesMap.set(nodeData.id, outerSphere);
+
+            return outerSphere; // Return the outer sphere as the main node object
+        }
 
         // Function to create a laser beam particle system between two nodes
         function createLaserBeam(sourceNode, targetNode) {
             const path = new THREE.Line3(sourceNode.position, targetNode.position);
             const length = path.distance();
-            const particleCount = Math.floor(length * 20); // Even denser particles for beams
+            const particleCount = Math.floor(length * 20); // Denser particles for longer beams
             const particlesGeometry = new THREE.BufferGeometry();
             const positions = new Float32Array(particleCount * 3);
             const alphas = new Float32Array(particleCount); // For pulsing effect
@@ -727,8 +802,8 @@
                             uTime: { value: 0.0 },
                             uPointSize: { value: 0.1 } // Tiny dots for atmosphere
                         },
-                        vertexShader: atmosphereVertexShader,
-                        fragmentShader: atmosphereFragmentShader,
+                        vertexShader: atmosphereVertexShader, // Use the defined shader
+                        fragmentShader: atmosphereFragmentShader, // Use the defined shader
                         transparent: true,
                         blending: THREE.AdditiveBlending,
                         depthWrite: false // Important for transparent particles
@@ -803,7 +878,7 @@
             const numNodes = flowData.length;
             const orbitRadius = 60;
             const nodeSize = 3;
-            const labelOffset = nodeSize + 2;
+            const labelVerticalOffset = nodeSize * 2.5; // Vertical offset for the label above the node
 
             flowData.forEach((nodeData, i) => {
                 const phi = Math.acos(1 - (2 * (i + 0.5)) / numNodes);
@@ -815,11 +890,17 @@
 
                 const node = createParticleNode(nodeData, new THREE.Vector3(x, y, z));
 
-                const labelSprite = createTextSprite(nodeData.title, '#E2E8F0', 20);
-                labelSprite.position.set(x, y + labelOffset, z);
-                scene.add(labelSprite);
+                // Create and attach 3D text label
+                const labelMesh = create3DTextLabel(nodeData.title, 0x00FFFF, 1.0, nodeSize); // Cyan color, font size 1.0 (1/3 smaller)
+                // Position the label relative to the node
+                labelMesh.position.set(0, labelVerticalOffset, 0); // Above the sphere
+                node.add(labelMesh); // Make label a child of the node
 
-                node.userData.labelSprite = labelSprite;
+                // Create and attach the post
+                const postMesh = createSignPost(nodeSize, labelVerticalOffset);
+                node.add(postMesh); // Make post a child of the node
+
+                node.userData.labelMesh = labelMesh; // Store reference to the label for potential interaction
             });
 
             flowData.forEach(sourceNodeData => {
@@ -838,6 +919,26 @@
                 }
             });
         }
+
+        // Function to create a wood-like sign (Removed as per user request)
+        // function createWoodSign(message, nodeSize) { /* ... */ }
+
+        // Function to create a post for the sign
+        function createSignPost(nodeSize, signVerticalOffset) {
+            const postRadius = 0.2;
+            // Height from top of sphere to the bottom of the sign
+            // signVerticalOffset is center of sign, so subtract half sign height
+            const signHeightWorld = nodeSize * 1.5; // Approximate sign height in world units
+            const postHeight = signVerticalOffset - (signHeightWorld / 2) - (nodeSize * 0.8); // Adjusted to go into the sphere slightly
+            const postGeometry = new THREE.CylinderGeometry(postRadius, postRadius, postHeight, 8);
+            const postMaterial = new THREE.MeshPhongMaterial({ color: 0x5C4033 }); // Dark brown color
+
+            const postMesh = new THREE.Mesh(postGeometry, postMaterial);
+            // Position the post to connect the top of the sphere to the bottom of the sign
+            postMesh.position.set(0, (signVerticalOffset / 2) - (signHeightWorld / 4) - (nodeSize * 0.4), 0); // Adjusted to go into the sphere
+            return postMesh;
+        }
+
 
         // Handle window resize
         function onWindowResize() {
@@ -860,9 +961,10 @@
             const intersects = raycaster.intersectObjects(scene.children, true);
 
             if (intersects.length > 0) {
+                // Filter for actual interactive nodes (outer spheres or Earth)
                 const clickedObject = intersects.find(obj =>
                     obj.object.userData && obj.object.userData.id &&
-                    (obj.object.userData.isParticleNode || obj.object === centralEarthSphere)
+                    (obj.object.userData.isParticleNode || obj.object === centralEarthSphere || obj.object.userData.isTextLabel) // Also check for text labels
                 );
 
                 if (clickedObject) {
@@ -870,6 +972,15 @@
                         console.log("Clicked Earth Sphere!");
                     } else if (clickedObject.object.userData.isParticleNode) {
                         zoomToNode(clickedObject.object.userData.id);
+                    } else if (clickedObject.object.userData.isTextLabel) { // If a text label is clicked
+                        // Find the parent node (outer sphere)
+                        let parentNode = clickedObject.object.parent;
+                        while (parentNode && (!parentNode.userData || !parentNode.userData.isParticleNode)) {
+                            parentNode = parentNode.parent;
+                        }
+                        if (parentNode) {
+                            zoomToNode(parentNode.userData.id);
+                        }
                     }
                 }
             }
@@ -967,6 +1078,27 @@
             const infoDetails = document.getElementById('info-details');
             infoDetails.innerHTML = '';
 
+            // Highlight relevant laser beams
+            laserBeams.forEach(beam => {
+                // Ensure userData and its properties exist before accessing
+                const sourceId = beam.userData.sourceNode ? beam.userData.sourceNode.userData.id : null;
+                const targetId = beam.userData.targetNode ? beam.userData.targetNode.userData.id : null;
+                const isConnected = (sourceId === nodeData.id || targetId === nodeData.id);
+
+                if (isConnected) {
+                    beam.material.uniforms.uColor1.value.setHex(0x00FF00); // Bright green for connected
+                    beam.material.uniforms.uColor2.value.setHex(0x00FF00);
+                    beam.material.uniforms.uPulseSpeed.value = 2.0; // Faster pulse
+                    beam.material.uniforms.uTravelSpeed.value = 0.2; // Faster travel
+                } else {
+                    beam.material.uniforms.uColor1.value.setHex(0x101010); // Dim for non-connected
+                    beam.material.uniforms.uColor2.value.setHex(0x101010);
+                    beam.material.uniforms.uPulseSpeed.value = 0.5; // Slower pulse
+                    beam.material.uniforms.uTravelSpeed.value = 0.05; // Slower travel
+                }
+            });
+
+
             if (nodeData.inputs && nodeData.inputs.length > 0) {
                 const inputsTitle = document.createElement('h4');
                 inputsTitle.innerText = 'Inputs:';
@@ -1035,6 +1167,25 @@
         function hideInfoPanel() {
             const infoPanel = document.getElementById('info-panel');
             infoPanel.style.display = 'none';
+
+            // Reset laser beam colors to original
+            laserBeams.forEach(beam => {
+                // Ensure userData and its properties exist before accessing
+                const sourceNodeData = beam.userData.sourceNode ? beam.userData.sourceNode.userData : null;
+                const targetNodeData = beam.userData.targetNode ? beam.userData.targetNode.userData : null;
+
+                if (sourceNodeData && targetNodeData) {
+                    const originalSourceColor = new THREE.Color(sourceNodeData.particleColor1 || 0x00FFFF);
+                    const originalTargetColor = new THREE.Color(targetNodeData.particleColor1 || 0x00FFFF);
+                    beam.material.uniforms.uColor1.value.copy(originalSourceColor);
+                    beam.material.uniforms.uColor2.value.copy(originalTargetColor);
+                    beam.material.uniforms.uPulseSpeed.value = 1.0; // Reset to default pulse speed
+                    beam.material.uniforms.uTravelSpeed.value = 0.1; // Reset to default travel speed
+                } else {
+                    console.warn("Missing source/target node data for beam reset:", beam);
+                }
+            });
+
             if (controls) {
                 controls.enabled = true;
             }
@@ -1074,6 +1225,12 @@
                 }
             });
 
+            // Animate text labels (3D meshes)
+            textLabels.forEach(label => {
+                // Make the 3D text always face the camera
+                label.lookAt(camera.position);
+            });
+
 
             // Raycasting for hover effect (only if controls are enabled)
             if (controls && controls.enabled) {
@@ -1081,59 +1238,53 @@
                 const intersects = raycaster.intersectObjects(scene.children, true);
 
                 if (intersects.length > 0) {
+                    // Filter for actual interactive nodes (outer spheres or Earth)
                     const hoveredObject = intersects.find(obj =>
                         obj.object.userData && obj.object.userData.id &&
-                        (obj.object.userData.isParticleNode || obj.object === centralEarthSphere)
+                        (obj.object.userData.isParticleNode || obj.object === centralEarthSphere || obj.object.userData.isTextLabel) // Also check for text labels
                     );
 
                     if (hoveredObject) {
                         if (INTERSECTED != hoveredObject.object) {
                             if (INTERSECTED) {
-                                if (INTERSECTED.isPoints && INTERSECTED.material.uniforms) {
-                                    // Reset to original color (from nodeData)
-                                    const originalColor = new THREE.Color(INTERSECTED.userData.particleColor1);
-                                    INTERSECTED.material.uniforms.uColor1.value.copy(originalColor);
-                                    INTERSECTED.material.uniforms.uColor2.value.copy(new THREE.Color(INTERSECTED.userData.particleColor2));
-                                    INTERSECTED.material.uniforms.uPointSize.value = 0.05; // Reset size
-                                } else if (INTERSECTED.material && INTERSECTED.material.emissive) {
-                                    INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
+                                // Reset previous hovered object's emissive color
+                                if (INTERSECTED.material && INTERSECTED.material.emissive) {
+                                    INTERSECTED.material.emissive.setHex(INTERSECTED.currentEmissiveHex);
+                                }
+                                // Reset text label color if it was the previously hovered object
+                                if (INTERSECTED.userData.isTextLabel && INTERSECTED.material && INTERSECTED.material.emissive) {
+                                     INTERSECTED.material.emissive.setHex(INTERSECTED.userData.originalEmissive);
                                 }
                             }
+                            // Store current hovered object and change its emissive color
                             INTERSECTED = hoveredObject.object;
-                            if (INTERSECTED.isPoints && INTERSECTED.material.uniforms) {
-                                INTERSECTED.currentHex = INTERSECTED.material.uniforms.uColor1.value.getHex(); // Store original color
-                                INTERSECTED.material.uniforms.uColor1.value.setHex(0x00FF00); // Green glow on hover
-                                INTERSECTED.material.uniforms.uColor2.value.setHex(0x00FF00); // Green glow on hover
-                                INTERSECTED.material.uniforms.uPointSize.value = 0.1; // Slightly larger on hover
-                            } else if (INTERSECTED.material && INTERSECTED.material.emissive) {
-                                INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
-                                INTERSECTED.material.emissive.setHex(0x222222);
+                            if (INTERSECTED.material && INTERSECTED.material.emissive) {
+                                INTERSECTED.currentEmissiveHex = INTERSECTED.material.emissive.getHex(); // Store current emissive
+                                INTERSECTED.material.emissive.setHex(0x00FF00); // Green glow on hover
                             }
                         }
                     } else {
+                        // No interactive object intersected, restore previous
                         if (INTERSECTED) {
-                            if (INTERSECTED.isPoints && INTERSECTED.material.uniforms) {
-                                const originalColor1 = new THREE.Color(INTERSECTED.userData.particleColor1);
-                                const originalColor2 = new THREE.Color(INTERSECTED.userData.particleColor2);
-                                INTERSECTED.material.uniforms.uColor1.value.copy(originalColor1);
-                                INTERSECTED.material.uniforms.uColor2.value.copy(originalColor2);
-                                INTERSECTED.material.uniforms.uPointSize.value = 0.05; // Reset size
-                            } else if (INTERSECTED.material && INTERSECTED.material.emissive) {
-                                INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
+                            if (INTERSECTED.material && INTERSECTED.material.emissive) {
+                                INTERSECTED.material.emissive.setHex(INTERSECTED.currentEmissiveHex);
+                            }
+                            // Reset text label color if it was the previously hovered object
+                            if (INTERSECTED.userData.isTextLabel && INTERSECTED.material && INTERSECTED.material.emissive) {
+                                 INTERSECTED.material.emissive.setHex(INTERSECTED.userData.originalEmissive);
                             }
                         }
                         INTERSECTED = null;
                     }
                 } else {
+                    // No intersection at all, restore previous
                     if (INTERSECTED) {
-                        if (INTERSECTED.isPoints && INTERSECTED.material.uniforms) {
-                            const originalColor1 = new THREE.Color(INTERSECTED.userData.particleColor1);
-                            const originalColor2 = new THREE.Color(INTERSECTED.userData.particleColor2);
-                            INTERSECTED.material.uniforms.uColor1.value.copy(originalColor1);
-                            INTERSECTED.material.uniforms.uColor2.value.copy(originalColor2);
-                            INTERSECTED.material.uniforms.uPointSize.value = 0.05; // Reset size
-                        } else if (INTERSECTED.material && INTERSECTED.material.emissive) {
-                            INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
+                        if (INTERSECTED.material && INTERSECTED.material.emissive) {
+                            INTERSECTED.material.emissive.setHex(INTERSECTED.currentEmissiveHex);
+                        }
+                        // Reset text label color if it was the previously hovered object
+                        if (INTERSECTED.userData.isTextLabel && INTERSECTED.material && INTERSECTED.material.emissive) {
+                             INTERSECTED.material.emissive.setHex(INTERSECTED.userData.originalEmissive);
                         }
                     }
                     INTERSECTED = null;
